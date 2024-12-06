@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>My App</h1>
+        </header>
+        <main>
+            <p>This is a simple Flask app.</p>
+        </main>
+
+    </div>
+    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+</body>
+</html>

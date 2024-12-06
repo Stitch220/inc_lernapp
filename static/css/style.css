@@ -1,0 +1,47 @@
+/* Reset Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f4f4f9;
+}
+
+/* Responsive Layout */
+header, footer {
+    background: #333;
+    color: #fff;
+    text-align: center;
+    padding: 1em 0;
+}
+
+main {
+    padding: 1em;
+}
+
+/* Smartphones */
+@media (max-width: 600px) {
+    body {
+        font-size: 14px;
+    }
+}
+
+/* Tablets */
+@media (min-width: 601px) and (max-width: 1024px) {
+    body {
+        font-size: 16px;
+    }
+}
+
+/* Desktops */
+@media (min-width: 1025px) {
+    body {
+        font-size: 18px;
+    }
+}
+
