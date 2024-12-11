@@ -1,21 +1,24 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My App</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>Login</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/script.js" defer></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>My App</h1>
-        </header>
-        <main>
-            <p>This is a simple Flask app.</p>
-        </main>
-
-    </div>
-    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+    <form method="POST">
+        <h2>Login</h2>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username">
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password">
+        <div>
+            <input type="checkbox" id="stay_logged_in" name="stay_logged_in">
+            <label for="stay_logged_in">Stay Logged In</label>
+        </div>
+        <button type="submit">Login</button>
+    </form>
 </body>
 </html>
