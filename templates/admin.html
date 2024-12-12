@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/admin.css">
+    <script src="/static/js/logout.js" defer></script>
+</head>
+<body>
+    <h1>Admin Dashboard</h1>
+    <button id="logout-button">Logout</button>
+    <div class="dashboard-container">
+        <div class="existing_user_container">
+            <h2>Existing Users</h2>
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Password</th>
+                        <th>Role</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <form method="POST" action="/update_user" class="admin-form">
+                            <td>
+                                <input type="text" name="id" value="{{ user[0] }}" readonly class="admin-input">
+                            </td>
+                            <td>
+                                <input type="text" name="username" value="{{ user[1] }}" class="admin-input">
+                            </td>
+                            <td>
+                                <input type="password" name="password" placeholder="New password (optional)" class="admin-input">
+                            </td>
+                            <td>
+                                <select name="role" class="admin-select">
+                                    <option value="teacher" {% if user[2] == "teacher" %}selected{% endif %}>Teacher</option>
+                                    <option value="student" {% if user[2] == "student" %}selected{% endif %}>Student</option>
+                                    <option value="admin" {% if user[2] == "admin" %}selected{% endif %}>Admin</option>
+                                </select>
+                            </td>
+                            <td>
+                                <button type="submit" class="admin-button">Save</button>
+                                <a href="/delete_user/{{ user[0] }}" class="admin-delete-link">Delete</a>
+                            </td>
+                        </form>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="add_user_container">
+            <form method="POST" action="/add_user" class="admin-form">
+                <h2 class="admin-title">Add New User</h2>
+                <label for="username" class="admin-label">Username:</label>
+                <input type="text" id="username" name="username" required class="admin-input">
+
+                <label for="password" class="admin-label">Password:</label>
+                <input type="password" id="password" name="password" required class="admin-input">
+
+                <label for="role" class="admin-label">Role:</label>
+                <select id="role" name="role" class="admin-select">
+                    <option value="teacher">Teacher</option>
+                    <option value="student">Student</option>
+                    <option value="admin">Admin</option>
+                </select>
+
+                <button type="submit" class="admin-button">Add User</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

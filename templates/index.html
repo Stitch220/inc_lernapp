@@ -5,16 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/login.css">
     <script src="/static/js/script.js" defer></script>
 </head>
 <body>
-    <form method="POST">
+    <form method="POST" class="login-form">
         <h2>Login</h2>
         <label for="username">Username:</label>
         <input type="text" id="username" name="username">
         <label for="password">Password:</label>
         <input type="password" id="password" name="password">
-        <div>
+        <div class="checkbox-container">
             <input type="checkbox" id="stay_logged_in" name="stay_logged_in">
             <label for="stay_logged_in">Stay Logged In</label>
         </div>

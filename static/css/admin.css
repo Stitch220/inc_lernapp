@@ -1,0 +1,126 @@
+
+/* Dashboard Layout */
+.dashboard-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2%; /* Abstand zwischen Tabelle und Add User */
+    padding: 0 2%; /* Abstand links und rechts vom Bildschirmrand */
+}
+
+.existing_user_container {
+    flex: 1;
+    max-width: 73%;
+    overflow-x: auto;
+}
+
+.add_user_container {
+    flex: 0 0 25%;
+    position: sticky;
+    top: 20px;
+    height: fit-content;
+    padding: 20px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Admin-specific styles */
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 18px;
+    text-align: left;
+}
+
+.admin-table th, .admin-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+.admin-table th {
+    background-color: #007BFF;
+    color: white;
+    text-align: center;
+}
+
+.admin-table tr:nth-child(even) {
+    background-color: #f4f4f9;
+}
+
+/* Admin Form */
+.admin-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.admin-input, .admin-select {
+    width: 90%;
+    padding: 8px;
+    margin: 2px auto;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    display: block;
+}
+
+
+.admin-label {
+    font-weight: bold;
+}
+
+.admin-button {
+    display: block;
+    background: green;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.admin-button:hover {
+    background: darkgreen;
+}
+
+/* Delete Link */
+.admin-delete-link {
+    display: block;
+    text-align: center;
+    
+    text-decoration: none;
+    color: #dc3545;
+    margin-left: 5px;
+}
+
+.admin-delete-link:hover {
+    text-decoration: underline;
+}
+
+/* Admin Section Title */
+.admin-title {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    .dashboard-container {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .existing_user_container, .add_user_container {
+        max-width: 100%;
+    }
+
+    .add_user_container {
+        margin-top: 20px;
+    }
+}

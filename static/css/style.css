@@ -1,4 +1,4 @@
-/* Reset Styles */
+/* Reset */
 * {
     margin: 0;
     padding: 0;
@@ -10,86 +10,91 @@ body {
     line-height: 1.6;
     color: #333;
     background-color: #f4f4f9;
+    margin: 0;
+    padding: 0;
 }
 
-/* Responsive Layout */
-header, footer {
-    background: #333;
-    color: #fff;
+header {
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px;
+    background: #f4f4f9;
+    border-bottom: 1px solid #ccc;
+}
+
+
+h1, h2 {
     text-align: center;
-    padding: 1em 0;
+    margin: 20px 0;
 }
 
-main {
-    padding: 1em;
+a {
+    text-decoration: none;
+    color: #007bff;
 }
 
-/* Smartphones */
+a:hover {
+    text-decoration: underline;
+}
+
+/* Buttons */
+button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 16px;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+#logout-button {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#logout-button:hover {
+    background: #c82333;
+}
+
+
+/* Inputs */
+input, select, textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+
+
+/* Responsive Design */
 @media (max-width: 600px) {
     body {
         font-size: 14px;
     }
 }
 
-/* Tablets */
 @media (min-width: 601px) and (max-width: 1024px) {
     body {
         font-size: 16px;
     }
 }
 
-/* Desktops */
 @media (min-width: 1025px) {
     body {
         font-size: 18px;
     }
 }
-
-
-body {
-    font-family: Arial, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background-color: #f4f4f9;
-}
-
-form {
-    background: white;
-    padding: 20px;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    width: 300px;
-    text-align: center;
-}
-
-form h2 {
-    margin-bottom: 15px;
-}
-
-form label {
-    display: block;
-    margin: 10px 0 5px;
-}
-
-form input {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 10px;
-}
-
-form button {
-    width: 100%;
-    padding: 10px;
-    background: #007BFF;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-form button:hover {
-    background: #0056b3;
-}
-
