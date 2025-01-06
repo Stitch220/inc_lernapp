@@ -4,15 +4,32 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key"
 
 ### Setup Database ###
-DATABASE = "users.db"
+USERS_DB = "users.db"
+CHATS_DB = "chats.db"
+
+def init_chat_db():
+    with sqlite3.connect(CHATS_DB) as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS chats (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student TEXT NOT NULL,
+                teacher TEXT NOT NULL,
+                message TEXT NOT NULL,
+                sender TEXT NOT NULL,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        conn.commit()
 
 def init_db():
-    with sqlite3.connect(DATABASE) as conn:
+    with sqlite3.connect(USERS_DB) as conn:
         cursor = conn.cursor()
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
@@ -31,6 +48,7 @@ def init_db():
                            ("Admin", generate_password_hash("0000"), "admin"))
             conn.commit()
 
+
 ### Standard Routes for Login Page ###
 @app.route("/", methods=["GET", "POST"])
 def login():
@@ -38,7 +56,7 @@ def login():
         username = request.form["username"]
         password = request.form["password"]
 
-        with sqlite3.connect(DATABASE) as conn:
+        with sqlite3.connect(USERS_DB) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
             user = cursor.fetchone()
@@ -47,9 +65,16 @@ def login():
                 session["username"] = username
                 session["role"] = user[3]
 
+                # Map roles to specific endpoints
                 if user[3] == "admin":
                     return redirect(url_for("admin"))
-                return redirect(url_for(user[3]))
+                elif user[3] == "teacher":
+                    return redirect(url_for("teacher_chat"))
+                elif user[3] == "student":
+                    return redirect(url_for("student_chat"))
+                else:
+                    flash("Invalid role", "error")
+                    return redirect(url_for("login"))
             else:
                 flash("Invalid credentials", "error")
 
@@ -62,7 +87,7 @@ def auto_login():
     username = data.get("username")
     password = data.get("password")
 
-    with sqlite3.connect(DATABASE) as conn:
+    with sqlite3.connect(USERS_DB) as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
         user = cursor.fetchone()
@@ -88,24 +113,106 @@ def auto_login():
 
 
 ### Teacher, Student and Admin Routes ###
-@app.route("/teacher")
-def teacher():
-    if "username" in session and session["role"] == "teacher":
-        return render_template("teacher.html", username=session["username"])
-    return redirect(url_for("login"))
+@app.route("/student", methods=["GET", "POST"])
+def student_chat():
+    if "username" not in session or session.get("role") != "student":
+        return redirect(url_for("login"))
+
+    student = session["username"]
+
+    # Fetch list of teachers
+    with sqlite3.connect(USERS_DB) as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT username FROM users WHERE role = 'teacher'")
+        teachers = [teacher[0] for teacher in cursor.fetchall()]
+
+    selected_teacher = request.args.get("teacher")
+
+    if request.method == "POST" and selected_teacher:
+        message = request.form["message"]
+        if not message.strip():
+            return redirect(url_for("student_chat", teacher=selected_teacher))
+
+        with sqlite3.connect(CHATS_DB) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO chats (student, teacher, message, sender, timestamp) VALUES (?, ?, ?, ?, ?)",
+                (student, selected_teacher, message, "student", datetime.now()),
+            )
+            conn.commit()
+        return redirect(url_for("student_chat", teacher=selected_teacher))
+
+    # Fetch chat history with the selected teacher
+    chats = []
+    if selected_teacher:
+        with sqlite3.connect(CHATS_DB) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT message, sender, timestamp 
+                FROM chats 
+                WHERE student = ? AND teacher = ? 
+                ORDER BY timestamp ASC
+                """,
+                (student, selected_teacher),
+            )
+            chats = cursor.fetchall()
+
+    return render_template("student.html", student=student, teachers=teachers, selected_teacher=selected_teacher, chats=chats)
 
 
-@app.route("/student")
-def student():
-    if "username" in session and session["role"] == "student":
-        return render_template("student.html", username=session["username"])
-    return redirect(url_for("login"))
+@app.route("/teacher", methods=["GET", "POST"])
+def teacher_chat():
+    if "username" not in session or session.get("role") != "teacher":
+        return redirect(url_for("login"))
+
+    teacher = session["username"]
+
+    # Fetch list of students
+    with sqlite3.connect(CHATS_DB) as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT DISTINCT student FROM chats WHERE teacher = ?", (teacher,))
+        students = [student[0] for student in cursor.fetchall()]
+
+    selected_student = request.args.get("student")
+
+    if request.method == "POST" and selected_student:
+        message = request.form["message"]
+        if not message.strip():
+            return redirect(url_for("teacher_chat", student=selected_student))
+
+        with sqlite3.connect(CHATS_DB) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO chats (student, teacher, message, sender, timestamp) VALUES (?, ?, ?, ?, ?)",
+                (selected_student, teacher, message, "teacher", datetime.now()),
+            )
+            conn.commit()
+        return redirect(url_for("teacher_chat", student=selected_student))
+
+    # Fetch chat history with the selected student
+    chats = []
+    if selected_student:
+        with sqlite3.connect(CHATS_DB) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT message, sender, timestamp 
+                FROM chats 
+                WHERE student = ? AND teacher = ? 
+                ORDER BY timestamp ASC
+                """,
+                (selected_student, teacher),
+            )
+            chats = cursor.fetchall()
+
+    return render_template("teacher.html", teacher=teacher, students=students, selected_student=selected_student, chats=chats)
 
 
 @app.route("/admin")
 def admin():
     if "username" in session and session["role"] == "admin":
-        with sqlite3.connect(DATABASE) as conn:
+        with sqlite3.connect(USERS_DB) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT id, username, role FROM users")
             users = cursor.fetchall()
@@ -122,7 +229,7 @@ def add_user():
         role = request.form["role"]
 
         try:
-            with sqlite3.connect(DATABASE) as conn:
+            with sqlite3.connect(USERS_DB) as conn:
                 cursor = conn.cursor()
                 hashed_password = generate_password_hash(password)
                 cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
@@ -133,6 +240,7 @@ def add_user():
             flash("Error: Username already exists.", "error")
     return redirect(url_for("admin"))
 
+
 @app.route("/update_user", methods=["POST"])
 def update_user():
     if "username" in session and session["role"] == "admin":
@@ -141,7 +249,7 @@ def update_user():
         new_password = request.form["password"]
         new_role = request.form["role"]
 
-        with sqlite3.connect(DATABASE) as conn:
+        with sqlite3.connect(USERS_DB) as conn:
             cursor = conn.cursor()
             if new_username:
                 cursor.execute("UPDATE users SET username = ? WHERE id = ?", (new_username, user_id))
@@ -158,13 +266,15 @@ def update_user():
 @app.route("/delete_user/<int:user_id>")
 def delete_user(user_id):
     if "username" in session and session["role"] == "admin":
-        with sqlite3.connect(DATABASE) as conn:
+        with sqlite3.connect(USERS_DB) as conn:
             cursor = conn.cursor()
             cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
             conn.commit()
         flash("User deleted successfully.", "success")
     return redirect(url_for("admin"))
 
+
 if __name__ == "__main__":
     init_db()
+    init_chat_db()
     app.run(debug=True)

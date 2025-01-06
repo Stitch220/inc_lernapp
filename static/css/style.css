@@ -78,7 +78,39 @@ input, select, textarea {
     font-size: 16px;
 }
 
+#chat-history {
+    margin: 20px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f4f4f9;
+}
 
+.chat-message {
+    margin-bottom: 10px;
+    padding: 5px;
+    border-bottom: 1px solid #ddd;
+}
+
+#chat-form {
+    margin: 20px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fff;
+}
+
+#chat-form textarea {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+#chat-form select,
+#chat-form button {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+}
 
 /* Responsive Design */
 @media (max-width: 600px) {

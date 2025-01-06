@@ -3,34 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Chat</title>
+    <title>Student Chat</title>
     <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="/static/css/teacher.css">
+    <link rel="stylesheet" href="/static/css/student.css">
     <script src="/static/js/logout.js" defer></script>
 </head>
 <body>
-    <h1>Welcome, {{ teacher }}</h1>
+    <h1>Welcome, {{ student }}</h1>
     <button id="logout-button">Logout</button>
 
-    <h2>Select a Student</h2>
-    <form method="GET" action="/teacher">
-        <label for="student">Select Student:</label>
-        <select name="student" id="student" onchange="this.form.submit()">
-            <option value="" disabled selected>Select a student</option>
-            {% for student in students %}
-            <option value="{{ student }}" {% if student == selected_student %}selected{% endif %}>
-                {{ student }}
+    <h2>Select a Teacher</h2>
+    <form method="GET" action="/student">
+        <label for="teacher">Select Teacher:</label>
+        <select name="teacher" id="teacher" onchange="this.form.submit()">
+            <option value="" disabled selected>Select a teacher</option>
+            {% for teacher in teachers %}
+            <option value="{{ teacher }}" {% if teacher == selected_teacher %}selected{% endif %}>
+                {{ teacher }}
             </option>
             {% endfor %}
         </select>
     </form>
 
-    {% if selected_student %}
-        <h2>Chat with {{ selected_student }}</h2>
+    {% if selected_teacher %}
+        <h2>Chat with {{ selected_teacher }}</h2>
         <div id="chat-history">
             {% if chats %}
                 {% for message, sender, timestamp in chats %}
-                <div class="chat-message {{ 'sent' if sender == 'teacher' else 'received' }}">
+                <div class="chat-message {{ 'sent' if sender == 'student' else 'received' }}">
                     <p><strong>{{ sender }}:</strong> {{ message }}</p>
                     <span class="timestamp">{{ timestamp }}</span>
                 </div>
@@ -41,7 +41,7 @@
         </div>
 
         <h2>Send a Message</h2>
-        <form method="POST" action="/teacher?student={{ selected_student }}">
+        <form method="POST" action="/student?teacher={{ selected_teacher }}">
             <label for="message">Message:</label>
             <textarea name="message" id="message" rows="4" required></textarea>
             <button type="submit">Send</button>
