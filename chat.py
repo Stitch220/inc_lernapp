@@ -2,40 +2,15 @@ from flask import render_template, request, redirect, url_for, session, flash
 import sqlite3
 import json
 from datetime import datetime
-from admin import active_nicknames, release_nickname
-
+import random
+import os
 
 
 CHATS_DB = "chats.db"
 USERS_DB = "users.db"
+NICKNAMES_JSON = "nicknames.json"
 
 
-def init_chat_db():
-    with sqlite3.connect(CHATS_DB) as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS chats (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                student TEXT NOT NULL,
-                teacher TEXT NOT NULL,
-                message TEXT NOT NULL,
-                sender TEXT NOT NULL,
-                nickname TEXT,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        # cursor.execute("""
-        #     CREATE TABLE IF NOT EXISTS archived_chats (
-        #         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        #         student TEXT NOT NULL,
-        #         teacher TEXT NOT NULL,
-        #         title TEXT NOT NULL,
-        #         nickname TEXT NOT NULL,
-        #         chat_content TEXT NOT NULL,
-        #         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        #     )
-        # """)
-        conn.commit()
 
 def format_chats(chats):
     """Format chats to include date labels and time."""
@@ -43,8 +18,9 @@ def format_chats(chats):
     current_date = None
     for message, sender, timestamp in chats:
         # Format: DD.MM.JJJJ
-        date = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S.%f").strftime("%d.%m.%Y")
-        time = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S.%f").strftime("%H:%M")
+        timestamp = timestamp.split(".")[0]  # Entferne Millisekunden, falls vorhanden
+        date = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S").strftime("%d.%m.%Y")
+        time = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S").strftime("%H:%M")
 
         if date != current_date:
             formatted_chats.append({"type": "date", "date": date})
@@ -58,7 +34,49 @@ def format_chats(chats):
         })
     return formatted_chats
 
+def load_nicknames():
+    """Lädt die Nicknames aus der JSON-Datei."""
+    if not os.path.exists(NICKNAMES_JSON):
+        raise FileNotFoundError(f"Die Datei {NICKNAMES_JSON} wurde nicht gefunden.")
+    
+    with open(NICKNAMES_JSON, "r") as file:
+        data = json.load(file)
+    return data["nicknames"]
 
+def assign_nickname(student):
+    """Weist einem Student einen zufälligen, noch nicht vergebenen Nickname zu."""
+    used_nicknames = get_used_nicknames()
+    available_nicknames = list(set(load_nicknames()) - set(used_nicknames))
+    
+    if available_nicknames:
+        nickname = random.choice(available_nicknames)
+    else:
+        nickname = "undefined"  # Standardname, falls keine Nicknames mehr verfügbar sind
+    
+    save_nickname(student, nickname)
+    return nickname
+
+def get_used_nicknames():
+    """Holt die bereits vergebenen Nicknames aus der Datenbank."""
+    with sqlite3.connect(CHATS_DB) as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT DISTINCT nickname FROM nicknames")
+        return [row[0] for row in cursor.fetchall()]
+
+def save_nickname(student, nickname):
+    """Speichert den Nickname eines Students in der Datenbank."""
+    with sqlite3.connect(CHATS_DB) as conn:
+        cursor = conn.cursor()
+        cursor.execute("INSERT OR IGNORE INTO nicknames (student, nickname) VALUES (?, ?)", (student, nickname))
+        conn.commit()
+
+def get_nickname(student):
+    """Holt den Nickname eines Students aus der Datenbank."""
+    with sqlite3.connect(CHATS_DB) as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT nickname FROM nicknames WHERE student = ?", (student,))
+        result = cursor.fetchone()
+        return result[0] if result else assign_nickname(student)
 
 def student_chat():
     if "username" not in session or session.get("role") != "student":
@@ -115,13 +133,17 @@ def teacher_chat():
 
     teacher = session["username"]
 
-    # Lists all students
+    # Lists all students with their nicknames
     with sqlite3.connect(USERS_DB) as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT username FROM users WHERE role = 'student'")
-        students = [student[0] for student in cursor.fetchall()]
+        raw_students = [student[0] for student in cursor.fetchall()]
+
+    # Get nicknames for each student
+    students = [(student, get_nickname(student)) for student in raw_students]
 
     selected_student = request.args.get("student") or ""
+    selected_nickname = get_nickname(selected_student) if selected_student else ""
 
     chats = []
     if selected_student:
@@ -155,11 +177,15 @@ def teacher_chat():
         teacher=teacher,
         students=students,
         selected_student=selected_student,
+        selected_nickname=selected_nickname,
         chats=chats
     )
 
 
-# def end_chat():
+
+
+def end_chat():
+    pass
 #     """Archiviert den Chat, speichert ihn in der Datenbank und gibt den Nickname frei."""
 #     if "username" not in session:
 #         return redirect(url_for("login"))

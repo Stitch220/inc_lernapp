@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -20,16 +21,16 @@
             <label for="student">Select Student:</label>
             <select name="student" id="student" onchange="this.form.submit()">
                 <option value="" disabled {% if not selected_student %}selected{% endif %}>Select a student</option>
-                {% for student in students %}
+                {% for student, nickname in students %}
                 <option value="{{ student }}" {% if student == selected_student %}selected{% endif %}>
-                    {{ student }}
+                    {{ nickname }}
                 </option>
                 {% endfor %}
             </select>
         </form>
 
         {% if selected_student %}
-        <h2>Chat with {{ selected_student }}</h2>
+        <h2>Chat with {{ selected_nickname }}</h2>
         <div id="chat-history">
             {% for chat in chats %}
                 {% if chat.type == "date" %}
@@ -51,6 +52,7 @@
         <p>Please select a student to start a chat.</p>
         {% endif %}
     </div>
+
     <script>
         // Scrolls down automatically
         window.onload = function() {

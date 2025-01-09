@@ -8,23 +8,6 @@ CHATS_DB = "chats.db"
 
 active_nicknames = {}
 
-def init_db():
-    with sqlite3.connect(USERS_DB) as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
-                role TEXT NOT NULL CHECK(role IN ('teacher', 'student', 'admin'))
-            )
-        """)
-        conn.commit()
-        cursor.execute("SELECT * FROM users WHERE username = 'Admin'")
-        if not cursor.fetchone():
-            cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
-                           ("Admin", generate_password_hash("0000"), "admin"))
-            conn.commit()
 
 def login():
     if request.method == "POST":
