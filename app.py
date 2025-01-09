@@ -11,8 +11,8 @@ USERS_DB = "users.db"
 CHATS_DB = "chats.db"
 
 def init_databases():
-    """Erstellt die benötigten Tabellen in der Datenbank, falls sie noch nicht existieren."""
-    # Initialisiere USERS_DB
+
+    # Init USERS_DB
     with sqlite3.connect(USERS_DB) as conn:
         cursor = conn.cursor()
         cursor.execute("""

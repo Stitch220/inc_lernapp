@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for, session, flash
+from flask import render_template, request, redirect, url_for, session
 import sqlite3
 import json
 from datetime import datetime
@@ -18,7 +18,7 @@ def format_chats(chats):
     current_date = None
     for message, sender, timestamp in chats:
         # Format: DD.MM.JJJJ
-        timestamp = timestamp.split(".")[0]  # Entferne Millisekunden, falls vorhanden
+        timestamp = timestamp.split(".")[0] 
         date = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S").strftime("%d.%m.%Y")
         time = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S").strftime("%H:%M")
 
@@ -51,7 +51,7 @@ def assign_nickname(student):
     if available_nicknames:
         nickname = random.choice(available_nicknames)
     else:
-        nickname = "undefined"  # Standardname, falls keine Nicknames mehr verfügbar sind
+        nickname = "undefined"  
     
     save_nickname(student, nickname)
     return nickname
