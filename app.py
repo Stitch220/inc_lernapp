@@ -1,6 +1,6 @@
 from flask import Flask
-from admin import init_db, init_chat_db, login, auto_login, admin, add_user, update_user, delete_user
-from chat import student_chat, teacher_chat, end_chat
+from admin import init_db, login, auto_login, admin, add_user, update_user, delete_user
+from chat import student_chat, teacher_chat, end_chat, init_chat_db
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key"

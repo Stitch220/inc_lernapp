@@ -10,50 +10,72 @@ CHATS_DB = "chats.db"
 USERS_DB = "users.db"
 
 
+def init_chat_db():
+    with sqlite3.connect(CHATS_DB) as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS chats (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student TEXT NOT NULL,
+                teacher TEXT NOT NULL,
+                message TEXT NOT NULL,
+                sender TEXT NOT NULL,
+                nickname TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        # cursor.execute("""
+        #     CREATE TABLE IF NOT EXISTS archived_chats (
+        #         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        #         student TEXT NOT NULL,
+        #         teacher TEXT NOT NULL,
+        #         title TEXT NOT NULL,
+        #         nickname TEXT NOT NULL,
+        #         chat_content TEXT NOT NULL,
+        #         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        #     )
+        # """)
+        conn.commit()
+
+def format_chats(chats):
+    """Format chats to include date labels and time."""
+    formatted_chats = []
+    current_date = None
+    for message, sender, timestamp in chats:
+        # Format: DD.MM.JJJJ
+        date = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S.%f").strftime("%d.%m.%Y")
+        time = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S.%f").strftime("%H:%M")
+
+        if date != current_date:
+            formatted_chats.append({"type": "date", "date": date})
+            current_date = date
+
+        formatted_chats.append({
+            "type": "message",
+            "message": message,
+            "sender": sender,
+            "time": f"{time} Uhr"
+        })
+    return formatted_chats
+
+
+
 def student_chat():
     if "username" not in session or session.get("role") != "student":
         return redirect(url_for("login"))
 
     student = session["username"]
 
-    # Liste der Lehrer abrufen
+    # Lists all teachers
     with sqlite3.connect(USERS_DB) as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT username FROM users WHERE role = 'teacher'")
         teachers = [teacher[0] for teacher in cursor.fetchall()]
 
-    # Archivierte Chats abrufen, die den aktuellen Schüler betreffen
-    archived_chats = []
-    with sqlite3.connect(CHATS_DB) as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT id, title FROM archived_chats 
-            WHERE student = ?
-            ORDER BY timestamp DESC
-        """, (student,))
-        archived_chats = cursor.fetchall()
-
-    selected_teacher = request.args.get("teacher")
-    selected_archived_chat_id = request.args.get("archived_chat")
+    selected_teacher = request.args.get("teacher") or ""
 
     chats = []
-    archived = False
-
-    if selected_archived_chat_id:
-        # Archivierten Chat abrufen und den Chat-Inhalt laden
-        with sqlite3.connect(CHATS_DB) as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT chat_content, teacher FROM archived_chats 
-                WHERE id = ? AND student = ?
-            """, (selected_archived_chat_id, student))
-            result = cursor.fetchone()
-            if result:
-                chats = json.loads(result[0])  # Chat-Inhalt als Liste laden
-                archived_chat_teacher = result[1]
-                archived = True
-    elif selected_teacher:
-        # Aktuellen Chat abrufen
+    if selected_teacher:
         with sqlite3.connect(CHATS_DB) as conn:
             cursor = conn.cursor()
             cursor.execute("""
@@ -62,14 +84,10 @@ def student_chat():
                 WHERE student = ? AND teacher = ?
                 ORDER BY timestamp ASC
             """, (student, selected_teacher))
-            chats = cursor.fetchall()
+            raw_chats = cursor.fetchall()
+            chats = format_chats(raw_chats)
 
-        # Falls kein aktiver Chat existiert, neuen Chat starten
-        if not chats:
-            nickname = get_unique_nickname(student)
-            flash(f"Starting a new chat with {selected_teacher}. Your nickname is {nickname}.", "info")
-
-    if request.method == "POST" and selected_teacher and not archived:
+    if request.method == "POST" and selected_teacher:
         message = request.form["message"]
         if not message.strip():
             return redirect(url_for("student_chat", teacher=selected_teacher))
@@ -87,17 +105,9 @@ def student_chat():
         "student.html",
         student=student,
         teachers=teachers,
-        archived_chats=archived_chats,
         selected_teacher=selected_teacher,
-        selected_archived_chat_id=selected_archived_chat_id,
-        archived_chat_teacher=archived_chat_teacher if archived else None,
-        chats=chats,
-        archived=archived
+        chats=chats
     )
-
-
-
-
 
 def teacher_chat():
     if "username" not in session or session.get("role") != "teacher":
@@ -105,46 +115,16 @@ def teacher_chat():
 
     teacher = session["username"]
 
-    # Liste der Schüler mit aktiven Chats abrufen
-    with sqlite3.connect(CHATS_DB) as conn:
+    # Lists all students
+    with sqlite3.connect(USERS_DB) as conn:
         cursor = conn.cursor()
-        cursor.execute("""
-            SELECT DISTINCT student FROM chats 
-            WHERE teacher = ?
-        """, (teacher,))
+        cursor.execute("SELECT username FROM users WHERE role = 'student'")
         students = [student[0] for student in cursor.fetchall()]
 
-    # Archivierte Chats abrufen
-    archived_chats = []
-    with sqlite3.connect(CHATS_DB) as conn:
-        cursor.execute("""
-            SELECT id, title FROM archived_chats 
-            WHERE teacher = ? 
-            ORDER BY timestamp DESC
-        """, (teacher,))
-        archived_chats = cursor.fetchall()
-
-
-    selected_student = request.args.get("student")
-    selected_archived_chat_id = request.args.get("archived_chat")
+    selected_student = request.args.get("student") or ""
 
     chats = []
-    archived = False
-
-    if selected_archived_chat_id:
-        # Öffnen des archivierten Chats
-        with sqlite3.connect(CHATS_DB) as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT chat_content FROM archived_chats 
-                WHERE id = ?
-            """, (selected_archived_chat_id,))
-            result = cursor.fetchone()
-            if result:
-                chats = json.loads(result[0])
-                archived = True
-    elif selected_student:
-        # Aktuellen Chat abrufen
+    if selected_student:
         with sqlite3.connect(CHATS_DB) as conn:
             cursor = conn.cursor()
             cursor.execute("""
@@ -153,80 +133,91 @@ def teacher_chat():
                 WHERE student = ? AND teacher = ?
                 ORDER BY timestamp ASC
             """, (selected_student, teacher))
-            chats = cursor.fetchall()
+            raw_chats = cursor.fetchall()
+            chats = format_chats(raw_chats)
+
+    if request.method == "POST" and selected_student:
+        message = request.form["message"]
+        if not message.strip():
+            return redirect(url_for("teacher_chat", student=selected_student))
+
+        with sqlite3.connect(CHATS_DB) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO chats (student, teacher, message, sender, timestamp) VALUES (?, ?, ?, ?, ?)",
+                (selected_student, teacher, message, "teacher", datetime.now()),
+            )
+            conn.commit()
+        return redirect(url_for("teacher_chat", student=selected_student))
 
     return render_template(
         "teacher.html",
         teacher=teacher,
         students=students,
-        archived_chats=archived_chats,
         selected_student=selected_student,
-        selected_archived_chat_id=selected_archived_chat_id,
-        chats=chats,
-        archived=archived
+        chats=chats
     )
 
 
+# def end_chat():
+#     """Archiviert den Chat, speichert ihn in der Datenbank und gibt den Nickname frei."""
+#     if "username" not in session:
+#         return redirect(url_for("login"))
 
-def end_chat():
-    """Archiviert den Chat, speichert ihn in der Datenbank und gibt den Nickname frei."""
-    if "username" not in session:
-        return redirect(url_for("login"))
+#     role = session["role"]
+#     user = session["username"]
+#     other_user = request.form["other_user"]  
 
-    role = session["role"]
-    user = session["username"]
-    other_user = request.form["other_user"]  # Der andere Chat-Partner (Lehrer oder Schüler)
+#     # Pop-up für den Titel des Chats
+#     chat_title = request.form["chat_title"].strip()
+#     if not chat_title:
+#         flash("Please enter a title for the chat.", "error")
+#         return redirect(url_for(f"{role}_chat", teacher=other_user if role == "student" else user))
 
-    # Pop-up für den Titel des Chats
-    chat_title = request.form["chat_title"].strip()
-    if not chat_title:
-        flash("Please enter a title for the chat.", "error")
-        return redirect(url_for(f"{role}_chat", teacher=other_user if role == "student" else user))
+#     # Nickname ermitteln
+#     if role == "teacher":
+#         nickname = active_nicknames.get(other_user, "Unknown")
+#     else:  # role == "student"
+#         nickname = active_nicknames.get(user, "Unknown")
 
-    # Nickname ermitteln
-    if role == "teacher":
-        nickname = active_nicknames.get(other_user, "Unknown")
-    else:  # role == "student"
-        nickname = active_nicknames.get(user, "Unknown")
+#     with sqlite3.connect(CHATS_DB) as conn:
+#         cursor = conn.cursor()
 
-    with sqlite3.connect(CHATS_DB) as conn:
-        cursor = conn.cursor()
+#         # ID für den neuen archivierten Chat ermitteln
+#         cursor.execute("SELECT MAX(id) FROM archived_chats")
+#         next_id = (cursor.fetchone()[0] or 0) + 1
 
-        # ID für den neuen archivierten Chat ermitteln
-        cursor.execute("SELECT MAX(id) FROM archived_chats")
-        next_id = (cursor.fetchone()[0] or 0) + 1
+#         # Chat-Verlauf abrufen
+#         cursor.execute("""
+#             SELECT message, sender, timestamp FROM chats 
+#             WHERE student = ? AND teacher = ?
+#             ORDER BY timestamp ASC
+#         """, (other_user if role == "teacher" else user, user if role == "teacher" else other_user))
+#         chat_content = cursor.fetchall()
 
-        # Chat-Verlauf abrufen
-        cursor.execute("""
-            SELECT message, sender, timestamp FROM chats 
-            WHERE student = ? AND teacher = ?
-            ORDER BY timestamp ASC
-        """, (other_user if role == "teacher" else user, user if role == "teacher" else other_user))
-        chat_content = cursor.fetchall()
+#         # Chat-Inhalt als JSON speichern
+#         chat_json = json.dumps(chat_content)
 
-        # Chat-Inhalt als JSON speichern
-        chat_json = json.dumps(chat_content)
+#         # Archivierten Chat speichern
+#         cursor.execute("""
+#             INSERT INTO archived_chats (id, student, teacher, title, nickname, chat_content)
+#             VALUES (?, ?, ?, ?, ?, ?)
+#         """, (next_id, other_user if role == "teacher" else user, user if role == "teacher" else other_user,
+#               chat_title, nickname, chat_json))
 
-        # Archivierten Chat speichern
-        cursor.execute("""
-            INSERT INTO archived_chats (id, student, teacher, title, nickname, chat_content)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (next_id, other_user if role == "teacher" else user, user if role == "teacher" else other_user,
-              chat_title, nickname, chat_json))
+#         # Chat aus der aktiven Chats-Tabelle löschen
+#         cursor.execute("""
+#             DELETE FROM chats 
+#             WHERE student = ? AND teacher = ?
+#         """, (other_user if role == "teacher" else user, user if role == "teacher" else other_user))
 
-        # Chat aus der aktiven Chats-Tabelle löschen
-        cursor.execute("""
-            DELETE FROM chats 
-            WHERE student = ? AND teacher = ?
-        """, (other_user if role == "teacher" else user, user if role == "teacher" else other_user))
+#         conn.commit()
 
-        conn.commit()
+#     # Nickname freigeben
+#     release_nickname(other_user if role == "teacher" else user)
 
-    # Nickname freigeben
-    release_nickname(other_user if role == "teacher" else user)
-
-    flash("Chat has been archived.", "success")
-    return redirect(url_for(f"{role}_chat"))
+#     flash("Chat has been archived.", "success")
+#     return redirect(url_for(f"{role}_chat"))
 
 
 

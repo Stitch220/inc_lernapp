@@ -9,82 +9,55 @@
     <script src="/static/js/logout.js" defer></script>
 </head>
 <body>
-    <h1>Welcome, {{ student }}</h1>
-    <button id="logout-button">Logout</button>
+    <header>
+        <h1>Welcome, {{ student }}</h1>
+        <button id="logout-button" onclick="location.href='/logout'">Logout</button>
+    </header>
 
-    <h2>Select a Teacher</h2>
-    <form method="GET" action="/student">
-        <label for="teacher">Select Teacher:</label>
-        <select name="teacher" id="teacher" onchange="this.form.submit()">
-            <option value="" disabled {% if not selected_teacher %}selected{% endif %}>Select a teacher</option>
-            {% for teacher in teachers %}
-            <option value="{{ teacher }}" {% if teacher == selected_teacher %}selected{% endif %}>
-                {{ teacher }}
-            </option>
-            {% endfor %}
-        </select>
-    </form>
-
-    {% if archived_chats %}
-    <h2>Archived Chats</h2>
-    <form method="GET" action="/student">
-        <label for="archived-chat">Select Archived Chat:</label>
-        <select name="archived_chat" id="archived-chat" onchange="this.form.submit()">
-            <option value="" disabled {% if not selected_archived_chat_id %}selected{% endif %}>Select an archived chat</option>
-            {% for id, title in archived_chats %}
-            <option value="{{ id }}" {% if id == selected_archived_chat_id %}selected{% endif %}>
-                {{ title }}
-            </option>
-            {% endfor %}
-        </select>
-    </form>
-    {% endif %}
-
-    {% if selected_teacher or selected_archived_chat_id %}
-        <h2>
-            Chat with {{ selected_teacher if selected_teacher else archived_chat_teacher }}
-        </h2>
-        <div id="chat-history">
-            {% if chats %}
-                {% for message, sender, timestamp in chats %}
-                <div class="chat-message {{ 'sent' if sender == 'student' else 'received' }}">
-                    <p><strong>{{ 'You' if sender == 'student' else (selected_teacher if selected_teacher else archived_chat_teacher) }}:</strong> {{ message }}</p>
-                    <span class="timestamp">{{ timestamp }}</span>
-                </div>
+    <div id="chat-container">
+        <h2>Select a Teacher</h2>
+        <form method="GET" action="/student">
+            <label for="teacher">Select Teacher:</label>
+            <select name="teacher" id="teacher" onchange="this.form.submit()">
+                <option value="" disabled {% if not selected_teacher %}selected{% endif %}>Select a teacher</option>
+                {% for teacher in teachers %}
+                <option value="{{ teacher }}" {% if teacher == selected_teacher %}selected{% endif %}>
+                    {{ teacher }}
+                </option>
                 {% endfor %}
-            {% else %}
-                <p>No messages yet. Start the conversation!</p>
-            {% endif %}
+            </select>
+        </form>
+
+        {% if selected_teacher %}
+        <h2>Chat with {{ selected_teacher }}</h2>
+        <div id="chat-history">
+            {% for chat in chats %}
+                {% if chat.type == "date" %}
+                    <div class="date-label">{{ chat.date }}</div>
+                {% elif chat.type == "message" %}
+                    <div class="chat-message {{ 'sent' if chat.sender == 'student' else 'received' }}">
+                        <p>{{ chat.message }}</p>
+                        <span class="timestamp">{{ chat.time }}</span>
+                    </div>
+                {% endif %}
+            {% endfor %}
         </div>
-        
 
-        {% if not archived %}
-            <h2>Send a Message</h2>
-            <form method="POST" action="/student?teacher={{ selected_teacher }}">
-                <label for="message">Message:</label>
-                <textarea name="message" id="message" rows="4" required></textarea>
-                <button type="submit">Send</button>
-            </form>
-            <form method="POST" action="/end_chat" onsubmit="return getChatTitle()">
-                <input type="hidden" name="other_user" value="{{ selected_teacher }}">
-                <input type="hidden" id="chat-title-input" name="chat_title">
-                <button type="submit" class="end-chat-button">End Chat</button>
-            </form>
+        <form id="chat-form" method="POST" action="/student?teacher={{ selected_teacher }}">
+            <textarea name="message" id="message" rows="1" placeholder="Type a message..." required></textarea>
+            <button type="submit">Send</button>
+        </form>
         {% else %}
-            <p>This chat has been archived. You can no longer send messages.</p>
+        <p>Please select a teacher to start a chat.</p>
         {% endif %}
-    {% endif %}
-
+    </div>
     <script>
-        function getChatTitle() {
-            const title = prompt("Please enter a title for this chat:");
-            if (!title) {
-                alert("You must enter a title to archive the chat.");
-                return false;
-            }
-            document.getElementById('chat-title-input').value = title;
-            return true;
-        }
+        // Scrolls down automatically
+        window.onload = function() {
+            var chatHistory = document.getElementById("chat-history");
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        };
     </script>
+    
 </body>
 </html>

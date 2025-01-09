@@ -8,32 +8,6 @@ CHATS_DB = "chats.db"
 
 active_nicknames = {}
 
-def init_chat_db():
-    with sqlite3.connect(CHATS_DB) as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS chats (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                student TEXT NOT NULL,
-                teacher TEXT NOT NULL,
-                message TEXT NOT NULL,
-                sender TEXT NOT NULL,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS archived_chats (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                student TEXT NOT NULL,
-                teacher TEXT NOT NULL,
-                title TEXT NOT NULL,
-                nickname TEXT NOT NULL,
-                chat_content TEXT NOT NULL,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        conn.commit()
-
 def init_db():
     with sqlite3.connect(USERS_DB) as conn:
         cursor = conn.cursor()

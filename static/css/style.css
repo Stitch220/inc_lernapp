@@ -6,55 +6,36 @@
 }
 
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
     line-height: 1.6;
     color: #333;
-    background-color: #f4f4f9;
+    background-color: #e5ddd5;
     margin: 0;
     padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
 }
 
 header {
-    display: flex;
-    justify-content: flex-end;
-    padding: 10px;
-    background: #f4f4f9;
-    border-bottom: 1px solid #ccc;
+    width: 100%;
+    padding: 10px 20px;
+    background: #075e54;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    border-bottom: 2px solid #128c7e;
+    text-align: center;
 }
-
 
 h1, h2 {
-    text-align: center;
     margin: 20px 0;
+    text-align: center;
 }
 
-a {
-    text-decoration: none;
-    color: #007bff;
-}
-
-a:hover {
-    text-decoration: underline;
-}
-
-/* Buttons */
 button {
-    background: #007bff;
-    color: white;
-    border: none;
-    padding: 10px;
-    border-radius: 5px;
-    cursor: pointer;
-    width: 100%;
-    font-size: 16px;
-}
-
-button:hover {
-    background: #0056b3;
-}
-
-#logout-button {
-    background: #dc3545;
+    background: #128c7e;
     color: white;
     border: none;
     padding: 10px 15px;
@@ -63,53 +44,8 @@ button:hover {
     font-size: 14px;
 }
 
-#logout-button:hover {
-    background: #c82333;
-}
-
-
-/* Inputs */
-input, select, textarea {
-    width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 16px;
-}
-
-#chat-history {
-    margin: 20px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background-color: #f4f4f9;
-}
-
-.chat-message {
-    margin-bottom: 10px;
-    padding: 5px;
-    border-bottom: 1px solid #ddd;
-}
-
-#chat-form {
-    margin: 20px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background-color: #fff;
-}
-
-#chat-form textarea {
-    width: 100%;
-    margin-bottom: 10px;
-}
-
-#chat-form select,
-#chat-form button {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 10px;
+button:hover {
+    background: #0e7769;
 }
 
 /* Responsive Design */
