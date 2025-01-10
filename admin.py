@@ -8,21 +8,25 @@ CHATS_DB = "chats.db"
 
 active_nicknames = {}
 
-
+# Login page
 def login():
     if request.method == "POST":
+        # Read in username and password
         username = request.form["username"]
         password = request.form["password"]
 
+        # Check if the user exists
         with sqlite3.connect(USERS_DB) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
             user = cursor.fetchone()
 
+            # If the user exists, check the password
             if user and check_password_hash(user[2], password):
                 session["username"] = username
                 session["role"] = user[3]
 
+                # Redirect to the appropriate page based on the role
                 if user[3] == "admin":
                     return redirect(url_for("admin"))
                 elif user[3] == "teacher":
@@ -37,19 +41,24 @@ def login():
 
     return render_template("index.html")
 
+# Auto login
 def auto_login():
     data = request.get_json()
+    # Read in username and password
     username = data.get("username")
     password = data.get("password")
 
+    # Check if the user exists
     with sqlite3.connect(USERS_DB) as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
         user = cursor.fetchone()
 
+        # If the user exists, check the password
         if user and check_password_hash(user[2], password):
             session["username"] = username
             session["role"] = user[3]
+            # Redirect to the appropriate page based on the role
             if user[3] == "admin":
                 return {"success": True, "redirect_url": url_for("admin")}
             elif user[3] == "teacher":
@@ -60,25 +69,31 @@ def auto_login():
 
     return {"success": False}
 
+# Admin page
 def admin():
     if "username" in session and session["role"] == "admin":
         with sqlite3.connect(USERS_DB) as conn:
             cursor = conn.cursor()
+            # Get all users
             cursor.execute("SELECT id, username, role FROM users")
             users = cursor.fetchall()
         return render_template("admin.html", users=users)
     return redirect(url_for("login"))
 
+## CRUD Functions ##
+# Add user
 def add_user():
     if "username" in session and session["role"] == "admin":
         username = request.form["username"]
         password = request.form["password"]
         role = request.form["role"]
 
+        # Check if the username already exists
         try:
             with sqlite3.connect(USERS_DB) as conn:
                 cursor = conn.cursor()
                 hashed_password = generate_password_hash(password)
+                # Insert the new user
                 cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
                                (username, hashed_password, role))
                 conn.commit()
@@ -87,6 +102,7 @@ def add_user():
             flash("Error: Username already exists.", "error")
     return redirect(url_for("admin"))
 
+# Update user
 def update_user():
     if "username" in session and session["role"] == "admin":
         user_id = request.form["id"]
@@ -94,6 +110,7 @@ def update_user():
         new_password = request.form["password"]
         new_role = request.form["role"]
 
+        # Check for changes an updates
         with sqlite3.connect(USERS_DB) as conn:
             cursor = conn.cursor()
             if new_username:
@@ -108,8 +125,10 @@ def update_user():
         flash("User updated successfully.", "success")
     return redirect(url_for("admin"))
 
+# Delete user
 def delete_user(user_id):
     if "username" in session and session["role"] == "admin":
+        # Deletes the user
         with sqlite3.connect(USERS_DB) as conn:
             cursor = conn.cursor()
             cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
@@ -117,22 +136,4 @@ def delete_user(user_id):
         flash("User deleted successfully.", "success")
     return redirect(url_for("admin"))
 
-def get_unique_nickname(student):
-    if student in active_nicknames:
-        return active_nicknames[student]
 
-    with open("nickname.json", "r") as file:
-        data = json.load(file)
-        available_nicknames = data["nicknames"]
-
-    used_nicknames = set(active_nicknames.values())
-    for nickname in available_nicknames:
-        if nickname not in used_nicknames:
-            active_nicknames[student] = nickname
-            return nickname
-
-    return "Unknown"
-
-def release_nickname(student):
-    if student in active_nicknames:
-        del active_nicknames[student]

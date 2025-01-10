@@ -15,6 +15,7 @@ def init_databases():
     # Init USERS_DB
     with sqlite3.connect(USERS_DB) as conn:
         cursor = conn.cursor()
+        # Users table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -24,6 +25,7 @@ def init_databases():
             )
         """)
         conn.commit()
+        # Admin user
         cursor.execute("SELECT * FROM users WHERE username = 'Admin'")
         if not cursor.fetchone():
             cursor.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
@@ -33,6 +35,7 @@ def init_databases():
     # Initialisiere CHATS_DB
     with sqlite3.connect(CHATS_DB) as conn:
         cursor = conn.cursor()
+        # Chats table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS chats (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,6 +47,7 @@ def init_databases():
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         """)
+        # Nicknames table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS nicknames (
                 student TEXT PRIMARY KEY,
@@ -52,6 +56,7 @@ def init_databases():
         """)
         conn.commit()
 
+# Routes
 app.add_url_rule("/", "login", login, methods=["GET", "POST"])
 app.add_url_rule("/auto_login", "auto_login", auto_login, methods=["POST"])
 app.add_url_rule("/admin", "admin", admin)

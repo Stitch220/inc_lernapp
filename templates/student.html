@@ -6,6 +6,7 @@
     <title>Student Chat</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/student.css">
+    <script src="/static/js/chat.js" defer></script>
     <script src="/static/js/logout.js" defer></script>
 </head>
 <body>
@@ -51,13 +52,7 @@
         <p>Please select a teacher to start a chat.</p>
         {% endif %}
     </div>
-    <script>
-        // Scrolls down automatically
-        window.onload = function() {
-            var chatHistory = document.getElementById("chat-history");
-            chatHistory.scrollTop = chatHistory.scrollHeight;
-        };
-    </script>
+
     
 </body>
 </html>

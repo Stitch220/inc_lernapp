@@ -5,15 +5,12 @@ from datetime import datetime
 import random
 import os
 
-
 CHATS_DB = "chats.db"
 USERS_DB = "users.db"
 NICKNAMES_JSON = "nicknames.json"
 
-
-
+# Formats the chat messages
 def format_chats(chats):
-    """Format chats to include date labels and time."""
     formatted_chats = []
     current_date = None
     for message, sender, timestamp in chats:
@@ -34,17 +31,17 @@ def format_chats(chats):
         })
     return formatted_chats
 
+# Loads nicknames from a JSON file
 def load_nicknames():
-    """Lädt die Nicknames aus der JSON-Datei."""
     if not os.path.exists(NICKNAMES_JSON):
-        raise FileNotFoundError(f"Die Datei {NICKNAMES_JSON} wurde nicht gefunden.")
+        raise FileNotFoundError(f"File: {NICKNAMES_JSON} not found.")
     
     with open(NICKNAMES_JSON, "r") as file:
         data = json.load(file)
     return data["nicknames"]
 
+# Assigns a nickname to a student randomly
 def assign_nickname(student):
-    """Weist einem Student einen zufälligen, noch nicht vergebenen Nickname zu."""
     used_nicknames = get_used_nicknames()
     available_nicknames = list(set(load_nicknames()) - set(used_nicknames))
     
@@ -56,28 +53,29 @@ def assign_nickname(student):
     save_nickname(student, nickname)
     return nickname
 
+# Gets the list of used nicknames
 def get_used_nicknames():
-    """Holt die bereits vergebenen Nicknames aus der Datenbank."""
     with sqlite3.connect(CHATS_DB) as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT DISTINCT nickname FROM nicknames")
         return [row[0] for row in cursor.fetchall()]
 
+# Saves a nickname to the database
 def save_nickname(student, nickname):
-    """Speichert den Nickname eines Students in der Datenbank."""
     with sqlite3.connect(CHATS_DB) as conn:
         cursor = conn.cursor()
         cursor.execute("INSERT OR IGNORE INTO nicknames (student, nickname) VALUES (?, ?)", (student, nickname))
         conn.commit()
 
+# Gets a nickname for a student
 def get_nickname(student):
-    """Holt den Nickname eines Students aus der Datenbank."""
     with sqlite3.connect(CHATS_DB) as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT nickname FROM nicknames WHERE student = ?", (student,))
         result = cursor.fetchone()
         return result[0] if result else assign_nickname(student)
 
+# Handles student chat
 def student_chat():
     if "username" not in session or session.get("role") != "student":
         return redirect(url_for("login"))
@@ -94,6 +92,7 @@ def student_chat():
 
     chats = []
     if selected_teacher:
+        # Lists all chats between the student and the selected teacher
         with sqlite3.connect(CHATS_DB) as conn:
             cursor = conn.cursor()
             cursor.execute("""
@@ -107,9 +106,11 @@ def student_chat():
 
     if request.method == "POST" and selected_teacher:
         message = request.form["message"]
+        # Checks if the message is empty
         if not message.strip():
             return redirect(url_for("student_chat", teacher=selected_teacher))
 
+        # Adds the message to the database
         with sqlite3.connect(CHATS_DB) as conn:
             cursor = conn.cursor()
             cursor.execute(
@@ -127,6 +128,7 @@ def student_chat():
         chats=chats
     )
 
+# Handles teacher chat
 def teacher_chat():
     if "username" not in session or session.get("role") != "teacher":
         return redirect(url_for("login"))
@@ -146,6 +148,7 @@ def teacher_chat():
     selected_nickname = get_nickname(selected_student) if selected_student else ""
 
     chats = []
+    # Lists all chats between the teacher and the selected student
     if selected_student:
         with sqlite3.connect(CHATS_DB) as conn:
             cursor = conn.cursor()
@@ -158,11 +161,14 @@ def teacher_chat():
             raw_chats = cursor.fetchall()
             chats = format_chats(raw_chats)
 
+    # Handles sending messages
     if request.method == "POST" and selected_student:
         message = request.form["message"]
+        # Checks if the message is empty
         if not message.strip():
             return redirect(url_for("teacher_chat", student=selected_student))
 
+        # Adds the message to the database
         with sqlite3.connect(CHATS_DB) as conn:
             cursor = conn.cursor()
             cursor.execute(
